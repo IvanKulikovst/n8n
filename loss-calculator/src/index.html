@@ -2,6 +2,7 @@
 <html lang="ru">
 <head>
 <meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Расчёт потерь ВВСТ</title>
 <style>
@@ -32,6 +33,10 @@
     --series-1: #3987e5; --series-2: #d95926;
   }
   * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  .no-details summary { display: block; }
+  .no-details details:not([open]) > *:not(summary) { display: none; }
+  .no-details summary::before { content: "▸ "; } .no-details details[open] > summary::before { content: "▾ "; }
   body { margin: 0; background: var(--bg); color: var(--text);
          font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
   main { max-width: 1100px; margin: 0 auto; padding: 20px 16px 48px; }
@@ -40,15 +45,16 @@
   h3 { font-size: 15px; margin: 16px 0 8px; }
   .sub { color: var(--muted); margin: 0 0 14px; }
   .card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 16px; margin-bottom: 16px; }
-  .grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); }
+  .grid { display: flex; flex-wrap: wrap; margin-right: -12px; }
+  .grid > * { flex: 1 1 210px; margin: 0 12px 12px 0; min-width: 0; }
   label, .lbl { display: block; font-size: 13px; color: var(--muted); margin-bottom: 4px; }
   label[title], .lbl[title], th[title], .coef[title] { cursor: help; }
   select, input { width: 100%; padding: 7px 8px; border: 1px solid var(--line); border-radius: 6px;
                   background: var(--card); color: var(--text); font: inherit; }
   input[type=checkbox] { width: auto; margin: 0; }
   input.bad-input { border-color: var(--bad); }
-  .check { display: flex; gap: 8px; align-items: flex-start; color: var(--text); font-size: 14px; margin-bottom: 6px; }
-  .check input { margin-top: 3px; }
+  .check { display: flex; align-items: flex-start; color: var(--text); font-size: 14px; margin-bottom: 6px; }
+  .check input { margin: 3px 8px 0 0; flex: none; }
   .hint { font-size: 12px; color: var(--muted); margin-top: 3px; }
   .table-wrap { overflow-x: auto; }
   table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
@@ -59,7 +65,9 @@
   td select { min-width: 210px; padding: 5px 6px; }
   td.name-cell input { text-align: left; min-width: 200px; }
   tfoot td { font-weight: 600; }
-  .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .row { display: flex; flex-wrap: wrap; align-items: center; margin-bottom: -6px; }
+  .row > * { margin: 0 8px 6px 0; }
+  .row > *:last-child { margin-right: 0; }
   button { font: inherit; border: 1px solid var(--line); background: var(--card); color: var(--text);
            border-radius: 6px; padding: 6px 12px; cursor: pointer; }
   button:hover { border-color: var(--muted); }
@@ -69,7 +77,14 @@
   button.del { padding: 2px 8px; color: var(--bad); }
   .coef { display: inline-block; background: var(--accent-soft); border-radius: 6px; padding: 2px 8px; margin: 2px 4px 2px 0; font-size: 13px; }
   .big { font-size: 24px; font-weight: 700; font-variant-numeric: tabular-nums; }
-  .tiles { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); margin-bottom: 12px; }
+  .tiles { display: flex; flex-wrap: wrap; margin: 0 -10px 2px 0; }
+  .tiles > * { flex: 1 1 160px; margin: 0 10px 10px 0; }
+  @supports (display: grid) {
+    .grid { display: grid; grid-gap: 12px; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); margin-right: 0; }
+    .grid > * { margin: 0; }
+    .tiles { display: grid; grid-gap: 10px; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); margin: 0 0 12px; }
+    .tiles > * { margin: 0; }
+  }
   .tile { border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; }
   .tile .v { font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums; }
   .tile .k { font-size: 12px; color: var(--muted); }
@@ -95,10 +110,11 @@
   .solution .p { margin: 2px 0; }
   .toolbar { padding: 4px 0; margin-bottom: 12px; }
   @media (max-width: 720px) { .toolbar button { padding: 5px 9px; font-size: 14px; } }
-  .legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
-  .legend span::before { content: ""; display: inline-block; width: 14px; height: 3px; border-radius: 2px; background: var(--c); vertical-align: middle; margin-right: 6px; }
+  .legend { display: flex; flex-wrap: wrap; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+  .legend span { margin-right: 16px; }
+  .legend i { display: inline-block; width: 14px; height: 3px; border-radius: 2px; vertical-align: middle; margin-right: 6px; }
   .chart { position: relative; }
-  .chart svg { display: block; width: 100%; height: auto; overflow: visible; }
+  .chart svg { display: block; overflow: visible; }
   .chart svg text { fill: var(--muted); font-size: 12px; }
   .chart svg text.dl { fill: var(--text); font-weight: 600; }
   .tip { position: absolute; pointer-events: none; background: var(--card); border: 1px solid var(--line); border-radius: 8px;
@@ -113,8 +129,8 @@
     table.cards thead { display: none; }
     table.cards, table.cards tbody, table.cards tfoot, table.cards tr, table.cards td { display: block; width: 100%; }
     table.cards tr { border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; margin-bottom: 10px; }
-    table.cards td { display: flex; justify-content: space-between; align-items: center; gap: 12px; border: 0; padding: 4px 0; white-space: normal; text-align: right; }
-    table.cards td::before { content: attr(data-label); color: var(--muted); font-size: 13px; text-align: left; font-weight: 400; }
+    table.cards td { display: flex; justify-content: space-between; align-items: center; border: 0; padding: 4px 0; white-space: normal; text-align: right; }
+    table.cards td::before { content: attr(data-label); color: var(--muted); font-size: 13px; text-align: left; font-weight: 400; padding-right: 12px; }
     table.cards td:first-child { text-align: left; }
     table.cards td input, table.cards td select { max-width: 60%; min-width: 0; }
     table.cards td:empty { display: none; }
@@ -130,6 +146,7 @@
 </head>
 <body>
 <main>
+  <noscript><div class="card"><b>Для работы калькулятора включите JavaScript.</b></div></noscript>
   <h1>Расчёт прогнозируемых потерь БТВТ и АТ</h1>
   <p class="sub">По методике главы 2: P<sub>ут</sub> = P<sub>ср</sub> × K(t) × K<sub>зс</sub> × K<sub>рб</sub> × K<sub>м</sub>,
     N<sub>абс</sub> = N<sub>сп</sub> × P / 100, K<sub>c</sub> = Q / N<sub>ВВСТ</sub></p>
@@ -144,7 +161,7 @@
     <input type="file" id="fileImport" accept=".json,application/json" hidden>
   </div>
 
-  <section class="card" id="warnCard" hidden>
+  <section class="card" id="warnCard" style="display:none">
     <h2>Проверка данных</h2>
     <ul class="msgs" id="warnings"></ul>
   </section>
@@ -286,6 +303,7 @@
   </details>
 </main>
 
+<script src="polyfills.js"></script>
 <script src="calc.js"></script>
 <script>
 (function () {
@@ -335,6 +353,16 @@
   const persist = () => storage.set(KEY_CUR, { input, refs });
 
   // ---------- Условия ----------
+  // classList.toggle(cls, force) без второго аргумента в IE11
+  const setClass = (el, cls, on) => { if (on) el.classList.add(cls); else el.classList.remove(cls); };
+  // Цвет из CSS-переменной; в браузерах без переменных — значение по умолчанию
+  const cssVar = (name, fallback) => {
+    try {
+      const v = window.getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+      return v || fallback;
+    } catch (e) { return fallback; }
+  };
+
   function fillSelect(el, map) { el.innerHTML = Object.entries(map).map(([v, t]) => `<option value="${v}">${esc(t)}</option>`).join(''); }
   fillSelect($('action'), C.ACTIONS);
   fillSelect($('echelon'), C.ECHELONS);
@@ -370,7 +398,7 @@
   function bindNum(id, setter) {
     $(id).addEventListener('input', () => {
       const v = num($(id).value);
-      $(id).classList.toggle('bad-input', Number.isNaN(v));
+      setClass($(id), 'bad-input', Number.isNaN(v));
       setter(Number.isNaN(v) ? NaN : v);
       recalc();
     });
@@ -457,7 +485,7 @@
       tr.querySelectorAll('input[data-f]').forEach((inp) => {
         inp.oninput = () => {
           const v = num(inp.value);
-          inp.classList.toggle('bad-input', Number.isNaN(v) || (v != null && v < 0));
+          setClass(inp, 'bad-input', Number.isNaN(v) || (v != null && v < 0));
           r[inp.dataset.f] = v == null ? 0 : v;
           recalc();
         };
@@ -555,13 +583,14 @@
   function drawChart(sim) {
     const box = $('chart');
     const tip = $('tip');
-    box.querySelectorAll('svg').forEach((s) => s.remove());
+    box.querySelectorAll('svg').forEach((s) => s.parentNode.removeChild(s));
     tip.style.display = 'none';
     const series = [
-      { key: 'btvt', name: 'БТВТ', color: 'var(--series-1)' },
-      { key: 'at', name: 'АТ', color: 'var(--series-2)' },
+      { key: 'btvt', name: 'БТВТ', color: cssVar('--series-1', '#2a78d6') },
+      { key: 'at', name: 'АТ', color: cssVar('--series-2', '#eb6834') },
     ].filter((s) => sim.initial[s.key] > 0);
-    $('legend').innerHTML = series.map((s) => `<span style="--c:${s.color}">${s.name}</span>`).join('');
+    $('legend').innerHTML = series.map((s) => `<span><i style="background:${s.color}"></i>${s.name}</span>`).join('');
+    const col = { grid: cssVar('--grid', '#eceef1'), line: cssVar('--line', '#dde1e6'), muted: cssVar('--muted', '#5d6773'), text: cssVar('--text', '#1d232b'), card: cssVar('--card', '#ffffff') };
     if (!series.length) { $('legend').textContent = 'Нет данных: укажите списочный состав.'; return; }
     const W = Math.max(300, box.clientWidth || 600);
     const H = 260;
@@ -581,13 +610,13 @@
     const xStep = N <= 10 ? 1 : N <= 30 ? 5 : 10;
     const xTicks = [];
     for (let d = 0; d <= N; d += xStep) xTicks.push(d);
-    let svg = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Исправная техника по суткам, % от списочного состава">`;
+    let svg = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="Исправная техника по суткам, % от списочного состава">`;
     yTicks.forEach((v) => {
-      svg += `<line x1="${m.l}" x2="${m.l + pw}" y1="${y(v)}" y2="${y(v)}" stroke="var(--grid)" stroke-width="1"/>`;
-      svg += `<text x="${m.l - 6}" y="${y(v) + 4}" text-anchor="end">${v}%</text>`;
+      svg += `<line x1="${m.l}" x2="${m.l + pw}" y1="${y(v)}" y2="${y(v)}" stroke="${col.grid}" stroke-width="1"/>`;
+      svg += `<text x="${m.l - 6}" y="${y(v) + 4}" text-anchor="end" fill="${col.muted}">${v}%</text>`;
     });
-    xTicks.forEach((d) => { svg += `<text x="${x(d)}" y="${H - 8}" text-anchor="middle">${d}</text>`; });
-    svg += `<line x1="${m.l}" x2="${m.l + pw}" y1="${m.t + ph}" y2="${m.t + ph}" stroke="var(--line)"/>`;
+    xTicks.forEach((d) => { svg += `<text x="${x(d)}" y="${H - 8}" text-anchor="middle" fill="${col.muted}">${d}</text>`; });
+    svg += `<line x1="${m.l}" x2="${m.l + pw}" y1="${m.t + ph}" y2="${m.t + ph}" stroke="${col.line}"/>`;
     const labelYs = [];
     series.forEach((s) => {
       const d = pts.map((p, i) => `${i ? 'L' : 'M'}${x(p.day).toFixed(1)},${y(p.pct[s.key]).toFixed(1)}`).join('');
@@ -596,10 +625,10 @@
       let ly = y(lp.pct[s.key]) + 4;
       labelYs.forEach((o) => { if (Math.abs(o - ly) < 14) ly = o + (ly >= o ? 14 : -14); });
       labelYs.push(ly);
-      svg += `<text class="dl" x="${m.l + pw + 6}" y="${ly}">${s.name} ${fmt(lp.pct[s.key], 0)}%</text>`;
+      svg += `<text class="dl" x="${m.l + pw + 6}" y="${ly}" fill="${col.text}">${s.name} ${fmt(lp.pct[s.key], 0)}%</text>`;
     });
-    svg += `<g id="hover" style="display:none"><line id="hx" y1="${m.t}" y2="${m.t + ph}" stroke="var(--muted)" stroke-width="1" stroke-dasharray="3 3"/>`;
-    series.forEach((s) => { svg += `<circle data-s="${s.key}" r="4.5" fill="${s.color}" stroke="var(--card)" stroke-width="2"/>`; });
+    svg += `<g id="hover" style="display:none"><line id="hx" y1="${m.t}" y2="${m.t + ph}" stroke="${col.muted}" stroke-width="1" stroke-dasharray="3 3"/>`;
+    series.forEach((s) => { svg += `<circle data-s="${s.key}" r="4.5" fill="${s.color}" stroke="${col.card}" stroke-width="2"/>`; });
     svg += `</g><rect x="${m.l}" y="${m.t}" width="${pw}" height="${ph}" fill="transparent" id="hit"/></svg>`;
     box.insertAdjacentHTML('afterbegin', svg);
     const svgEl = box.querySelector('svg');
@@ -627,9 +656,19 @@
       tip.style.top = '8px';
     };
     const hit = svgEl.querySelector('#hit');
-    hit.addEventListener('pointermove', move);
-    hit.addEventListener('pointerdown', move);
-    hit.addEventListener('pointerleave', () => { hover.style.display = 'none'; tip.style.display = 'none'; });
+    const hide = () => { hover.style.display = 'none'; tip.style.display = 'none'; };
+    const touch = (ev) => { if (ev.touches && ev.touches[0]) move(ev.touches[0]); };
+    if (window.PointerEvent) {
+      hit.addEventListener('pointermove', move);
+      hit.addEventListener('pointerdown', move);
+      hit.addEventListener('pointerleave', hide);
+    } else {
+      // старые Safari и Chrome без Pointer Events
+      hit.addEventListener('mousemove', move);
+      hit.addEventListener('mouseleave', hide);
+      hit.addEventListener('touchstart', touch);
+      hit.addEventListener('touchmove', touch);
+    }
   }
 
   // ---------- Ход решения ----------
@@ -642,7 +681,7 @@
     const label = { error: 'Ошибка', warn: 'Внимание', info: 'Примечание' };
     const order = { error: 0, warn: 1, info: 2 };
     list.sort((a, b) => order[a.level] - order[b.level]);
-    $('warnCard').hidden = !list.length;
+    $('warnCard').style.display = list.length ? '' : 'none';
     $('warnings').innerHTML = list.map((w) => `<li class="${w.level}"><b>${label[w.level]}:</b>${esc(w.text)}</li>`).join('');
   }
 
@@ -688,7 +727,7 @@
     let v = el.value;
     if (!('text' in el.dataset)) {
       v = num(v);
-      el.classList.toggle('bad-input', v == null || Number.isNaN(v));
+      setClass(el, 'bad-input', v == null || Number.isNaN(v));
       if (v == null || Number.isNaN(v)) return;
     }
     let o = refs;
@@ -766,39 +805,59 @@
 
   // ---------- Файлы ----------
   function download(name, content, type) {
+    const blob = new Blob([content], { type });
+    if (window.navigator.msSaveOrOpenBlob) { window.navigator.msSaveOrOpenBlob(blob, name); return; } // IE10–11, старый Edge
     const a = document.createElement('a');
-    a.href = URL.createObjectURL(new Blob([content], { type }));
+    if (!('download' in a)) { alert('Браузер не поддерживает сохранение файлов. Обновите браузер.'); return; }
+    a.href = URL.createObjectURL(blob);
     a.download = name;
     document.body.appendChild(a);
     a.click();
-    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 0);
+    setTimeout(() => { URL.revokeObjectURL(a.href); document.body.removeChild(a); }, 0);
   }
   $('btnCsv').onclick = () => download('raschet-poter.csv', C.toCSV(input, refs, last.day, last.repair, last.sim), 'text/csv;charset=utf-8');
   $('btnJson').onclick = () => download('raschet-poter.json', JSON.stringify({ format: 'loss-calc', version: 2, input, refs }, null, 2), 'application/json');
   $('btnImport').onclick = () => $('fileImport').click();
-  $('fileImport').onchange = async () => {
-    const f = $('fileImport').files[0];
+  $('fileImport').onchange = () => {
+    const f = $('fileImport').files && $('fileImport').files[0];
     if (!f) return;
-    try {
-      const data = JSON.parse(await f.text());
-      if (!isValidState(data)) throw new Error('format');
-      applyState(data);
-    } catch (e) {
-      alert('Не удалось загрузить файл: это не файл расчёта или он повреждён.');
-    }
-    $('fileImport').value = '';
+    if (!window.FileReader) { alert('Браузер не поддерживает чтение файлов.'); return; }
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const data = JSON.parse(String(reader.result).replace(/^\uFEFF/, ''));
+        if (!isValidState(data)) throw new Error('format');
+        applyState(data);
+      } catch (e) {
+        alert('Не удалось загрузить файл: это не файл расчёта или он повреждён.');
+      }
+      $('fileImport').value = '';
+    };
+    reader.onerror = () => alert('Не удалось прочитать файл.');
+    reader.readAsText(f, 'utf-8');
   };
   $('btnPrint').onclick = () => window.print();
-  window.addEventListener('beforeprint', () => { document.querySelectorAll('#simTable').forEach((t) => t.closest('details').open = true); });
-  $('btnCopy').onclick = async () => {
+  window.addEventListener('beforeprint', () => { const d = $('simTable').closest('details'); if (d) d.setAttribute('open', ''); });
+  $('btnCopy').onclick = () => {
     const txt = C.solutionText(last.solution);
-    try { await navigator.clipboard.writeText(txt); $('btnCopy').textContent = 'Скопировано ✓'; }
-    catch (e) {
-      const ta = document.createElement('textarea'); ta.value = txt; document.body.appendChild(ta); ta.select();
-      try { document.execCommand('copy'); $('btnCopy').textContent = 'Скопировано ✓'; } catch (e2) { /* нет доступа к буферу */ }
-      ta.remove();
-    }
-    setTimeout(() => { $('btnCopy').textContent = 'Копировать текст'; }, 1500);
+    const done = (ok) => {
+      $('btnCopy').textContent = ok ? 'Скопировано ✓' : 'Не удалось — выделите текст вручную';
+      setTimeout(() => { $('btnCopy').textContent = 'Копировать текст'; }, 1800);
+    };
+    const legacy = () => {
+      const ta = document.createElement('textarea');
+      ta.value = txt;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      let ok = false;
+      try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+      document.body.removeChild(ta);
+      done(ok);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(() => done(true), legacy);
+    else legacy();
   };
 
   $('btnExample').onclick = () => { input = C.exampleInput(refs); renderAll(); };
