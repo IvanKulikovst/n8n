@@ -6,55 +6,126 @@
 <title>Расчёт потерь ВВСТ</title>
 <style>
   :root {
+    color-scheme: light;
     --bg: #f6f7f9; --card: #ffffff; --text: #1d232b; --muted: #5d6773;
-    --line: #dde1e6; --accent: #2f6f4e; --accent-soft: #e5f1ea;
-    --warn: #9a5b00; --warn-soft: #fff4e0; --bad: #a3282b; --bad-soft: #fde8e8;
+    --line: #dde1e6; --grid: #eceef1; --accent: #2f6f4e; --accent-soft: #e5f1ea;
+    --warn: #8a5200; --warn-soft: #fff4e0; --bad: #a3282b; --bad-soft: #fde8e8;
+    --info-soft: #eaf1fb; --info: #1f5aa6;
+    --series-1: #2a78d6; --series-2: #eb6834;
   }
   @media (prefers-color-scheme: dark) {
-    :root {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
       --bg: #15181c; --card: #1e2227; --text: #e6e9ed; --muted: #9aa4af;
-      --line: #333a42; --accent: #6cc093; --accent-soft: #1f3329;
+      --line: #333a42; --grid: #2a2f35; --accent: #6cc093; --accent-soft: #1f3329;
       --warn: #f0b35a; --warn-soft: #3a2c16; --bad: #f08a8c; --bad-soft: #3d1f20;
+      --info-soft: #1b2a3d; --info: #8db8ee;
+      --series-1: #3987e5; --series-2: #d95926;
     }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #15181c; --card: #1e2227; --text: #e6e9ed; --muted: #9aa4af;
+    --line: #333a42; --grid: #2a2f35; --accent: #6cc093; --accent-soft: #1f3329;
+    --warn: #f0b35a; --warn-soft: #3a2c16; --bad: #f08a8c; --bad-soft: #3d1f20;
+    --info-soft: #1b2a3d; --info: #8db8ee;
+    --series-1: #3987e5; --series-2: #d95926;
   }
   * { box-sizing: border-box; }
   body { margin: 0; background: var(--bg); color: var(--text);
          font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
-  main { max-width: 1040px; margin: 0 auto; padding: 20px 16px 48px; }
+  main { max-width: 1100px; margin: 0 auto; padding: 20px 16px 48px; }
   h1 { font-size: 22px; margin: 0 0 4px; }
   h2 { font-size: 17px; margin: 0 0 12px; }
-  .sub { color: var(--muted); margin: 0 0 20px; }
-  .card { background: var(--card); border: 1px solid var(--line); border-radius: 10px;
-          padding: 16px; margin-bottom: 16px; }
-  .grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
-  label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 4px; }
+  h3 { font-size: 15px; margin: 16px 0 8px; }
+  .sub { color: var(--muted); margin: 0 0 14px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 16px; margin-bottom: 16px; }
+  .grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); }
+  label, .lbl { display: block; font-size: 13px; color: var(--muted); margin-bottom: 4px; }
+  label[title], .lbl[title], th[title], .coef[title] { cursor: help; }
   select, input { width: 100%; padding: 7px 8px; border: 1px solid var(--line); border-radius: 6px;
                   background: var(--card); color: var(--text); font: inherit; }
-  input[type=checkbox] { width: auto; }
+  input[type=checkbox] { width: auto; margin: 0; }
+  input.bad-input { border-color: var(--bad); }
+  .check { display: flex; gap: 8px; align-items: flex-start; color: var(--text); font-size: 14px; margin-bottom: 6px; }
+  .check input { margin-top: 3px; }
   .hint { font-size: 12px; color: var(--muted); margin-top: 3px; }
   .table-wrap { overflow-x: auto; }
   table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
-  th, td { border-bottom: 1px solid var(--line); padding: 6px 6px; text-align: right; white-space: nowrap; }
+  th, td { border-bottom: 1px solid var(--line); padding: 6px; text-align: right; white-space: nowrap; }
   th:first-child, td:first-child { text-align: left; }
-  th { font-size: 12px; color: var(--muted); font-weight: 600; }
-  td input { min-width: 64px; padding: 5px 6px; }
-  td select { min-width: 220px; padding: 5px 6px; }
+  th { font-size: 12px; color: var(--muted); font-weight: 600; vertical-align: bottom; }
+  td input { min-width: 62px; padding: 5px 6px; text-align: right; }
+  td select { min-width: 210px; padding: 5px 6px; }
+  td.name-cell input { text-align: left; min-width: 200px; }
   tfoot td { font-weight: 600; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
   button { font: inherit; border: 1px solid var(--line); background: var(--card); color: var(--text);
            border-radius: 6px; padding: 6px 12px; cursor: pointer; }
+  button:hover { border-color: var(--muted); }
   button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  :root[data-theme="dark"] button.primary { color: #10231a; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) button.primary { color: #10231a; } }
   button.del { padding: 2px 8px; color: var(--bad); }
-  .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
-  .coef { display: inline-block; background: var(--accent-soft); border-radius: 6px; padding: 2px 8px; margin: 2px 4px 2px 0; }
+  .coef { display: inline-block; background: var(--accent-soft); border-radius: 6px; padding: 2px 8px; margin: 2px 4px 2px 0; font-size: 13px; }
+  .big { font-size: 24px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .tiles { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); margin-bottom: 12px; }
+  .tile { border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; }
+  .tile .v { font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .tile .k { font-size: 12px; color: var(--muted); }
+  .status { display: inline-block; border-radius: 6px; padding: 1px 8px; font-size: 13px; font-weight: 600; }
+  .status.ok { background: var(--accent-soft); color: var(--accent); }
+  .status.bad { background: var(--bad-soft); color: var(--bad); }
   .verdict { padding: 10px 12px; border-radius: 8px; margin-top: 12px; }
-  .ok { background: var(--accent-soft); }
-  .bad { background: var(--bad-soft); color: var(--bad); }
-  .note { background: var(--warn-soft); border-radius: 8px; padding: 10px 12px; font-size: 13px; }
-  .note b { color: var(--warn); }
-  .big { font-size: 22px; font-weight: 700; }
-  details summary { cursor: pointer; font-weight: 600; }
-  details ol { margin: 8px 0 0; padding-left: 20px; }
-  details li { margin-bottom: 6px; }
+  .verdict.ok { background: var(--accent-soft); }
+  .verdict.bad { background: var(--bad-soft); color: var(--bad); }
+  .msgs { list-style: none; margin: 0; padding: 0; }
+  .msgs li { padding: 7px 10px; border-radius: 6px; margin-bottom: 6px; font-size: 14px; }
+  .msgs li b { margin-right: 6px; }
+  .msgs .error { background: var(--bad-soft); } .msgs .error b { color: var(--bad); }
+  .msgs .warn { background: var(--warn-soft); } .msgs .warn b { color: var(--warn); }
+  .msgs .info { background: var(--info-soft); } .msgs .info b { color: var(--info); }
+  details > summary { cursor: pointer; font-weight: 600; }
+  details.card > summary { font-size: 17px; }
+  .solution { font-size: 14px; }
+  .solution .h { font-weight: 700; margin: 14px 0 6px; }
+  .solution .h:first-child { margin-top: 0; }
+  .solution .s { font-weight: 600; margin: 8px 0 2px; }
+  .solution .f { font-family: ui-monospace, "SF Mono", Consolas, monospace; font-size: 13px; padding-left: 14px; white-space: pre-wrap; }
+  .solution .p { margin: 2px 0; }
+  .toolbar { padding: 4px 0; margin-bottom: 12px; }
+  @media (max-width: 720px) { .toolbar button { padding: 5px 9px; font-size: 14px; } }
+  .legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+  .legend span::before { content: ""; display: inline-block; width: 14px; height: 3px; border-radius: 2px; background: var(--c); vertical-align: middle; margin-right: 6px; }
+  .chart { position: relative; }
+  .chart svg { display: block; width: 100%; height: auto; overflow: visible; }
+  .chart svg text { fill: var(--muted); font-size: 12px; }
+  .chart svg text.dl { fill: var(--text); font-weight: 600; }
+  .tip { position: absolute; pointer-events: none; background: var(--card); border: 1px solid var(--line); border-radius: 8px;
+         padding: 8px 10px; font-size: 13px; box-shadow: 0 4px 14px rgba(0,0,0,.12); min-width: 170px; display: none; font-variant-numeric: tabular-nums; }
+  .tip .sw { display: inline-block; width: 10px; height: 3px; border-radius: 2px; margin-right: 6px; vertical-align: middle; }
+  .tip .muted { color: var(--muted); }
+  .sum-mismatch td { background: var(--warn-soft); }
+  .mono { font-family: ui-monospace, Consolas, monospace; }
+
+  /* Телефон: строки таблиц — карточками */
+  @media (max-width: 720px) {
+    table.cards thead { display: none; }
+    table.cards, table.cards tbody, table.cards tfoot, table.cards tr, table.cards td { display: block; width: 100%; }
+    table.cards tr { border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; margin-bottom: 10px; }
+    table.cards td { display: flex; justify-content: space-between; align-items: center; gap: 12px; border: 0; padding: 4px 0; white-space: normal; text-align: right; }
+    table.cards td::before { content: attr(data-label); color: var(--muted); font-size: 13px; text-align: left; font-weight: 400; }
+    table.cards td:first-child { text-align: left; }
+    table.cards td input, table.cards td select { max-width: 60%; min-width: 0; }
+    table.cards td:empty { display: none; }
+    table.cards tfoot tr { background: var(--accent-soft); }
+  }
+  @media print {
+    body { background: #fff; color: #000; font-size: 12px; }
+    .no-print, .toolbar, button, #compare, #refsCard, #checkCard { display: none !important; }
+    .card { border: 0; padding: 0; margin-bottom: 14px; break-inside: avoid-page; }
+    input, select { border: 0; padding: 0; }
+  }
 </style>
 </head>
 <body>
@@ -63,49 +134,53 @@
   <p class="sub">По методике главы 2: P<sub>ут</sub> = P<sub>ср</sub> × K(t) × K<sub>зс</sub> × K<sub>рб</sub> × K<sub>м</sub>,
     N<sub>абс</sub> = N<sub>сп</sub> × P / 100, K<sub>c</sub> = Q / N<sub>ВВСТ</sub></p>
 
+  <div class="toolbar row no-print">
+    <button class="primary" id="btnExample" title="Заполнить данными примера п. 2.5 (УТГ, оборона, 2-й эшелон)">Пример 2.5</button>
+    <button id="btnReset" title="Очистить исходные данные (справочники не меняются)">Очистить</button>
+    <button id="btnPrint" title="Печать отчёта с ходом решения или сохранение в PDF через диалог печати">Печать / PDF</button>
+    <button id="btnCsv" title="Таблицы результатов и расчёт по суткам — CSV для Excel">Экспорт в Excel (CSV)</button>
+    <button id="btnJson" title="Сохранить исходные данные и справочники в файл">Сохранить в файл</button>
+    <button id="btnImport" title="Загрузить ранее сохранённый файл">Загрузить из файла</button>
+    <input type="file" id="fileImport" accept=".json,application/json" hidden>
+  </div>
+
+  <section class="card" id="warnCard" hidden>
+    <h2>Проверка данных</h2>
+    <ul class="msgs" id="warnings"></ul>
+  </section>
+
   <section class="card">
     <h2>Условия операции</h2>
     <div class="grid">
       <div>
-        <label for="action">Характер действий</label>
-        <select id="action">
-          <option value="def">Оборонительные</option>
-          <option value="off">Наступательные</option>
-        </select>
+        <label for="action" title="Колонка табл. 2 и 3">Характер действий</label>
+        <select id="action"></select>
       </div>
       <div>
-        <label for="days">Продолжительность операции, сут.</label>
-        <input id="days" type="number" min="1" step="1" value="45">
+        <label for="days" title="Определяет K(t) по табл. 2; между строками — линейная интерполяция. Также — период прогноза.">Продолжительность операции, сут.</label>
+        <input id="days" inputmode="numeric">
         <div class="hint" id="ktHint"></div>
       </div>
       <div>
-        <label for="echelon">Элемент оперативного построения</label>
-        <select id="echelon">
-          <option value="e1">В 1-м эшелоне</option>
-          <option value="other">На других направлениях</option>
-          <option value="e2">Во 2-м эшелоне</option>
-        </select>
+        <label for="echelon" title="Строка табл. 3">Элемент оперативного построения</label>
+        <select id="echelon"></select>
       </div>
       <div>
-        <label for="kzs">K<sub>зс</sub></label>
-        <input id="kzs" type="number" step="0.01">
+        <label for="kzs" title="Коэффициент места в оперативном построении, табл. 3. При смене эшелона подставляется верхняя граница диапазона.">K<sub>зс</sub></label>
+        <input id="kzs" inputmode="decimal">
         <div class="hint" id="kzsHint"></div>
       </div>
       <div>
-        <label for="line">Разновидность боя</label>
-        <select id="line">
-          <option value="prep">Подготовленный рубеж</option>
-          <option value="unprep">Неподготовленный рубеж</option>
-        </select>
+        <label for="line" title="Колонка табл. 4">Разновидность боя</label>
+        <select id="line"></select>
       </div>
       <div>
-        <label>&nbsp;</label>
-        <label style="display:flex;gap:8px;align-items:center;color:var(--text)">
-          <input id="utg" type="checkbox" checked> <span>Масштаб УТГ (K<sub>м</sub>: 1,25 БТВТ / 1,15 АТ)</span>
-        </label>
-        <label style="display:flex;gap:8px;align-items:center;color:var(--text)">
-          <input id="roundPct" type="checkbox" checked> <span>Округлять % до 0,1 (как в методике)</span>
-        </label>
+        <label for="roundN" title="Как округлять прогноз в единицах техники. В методичке для БТВТ взято 0,01, для АТ — 0,1.">Округление в единицах</label>
+        <select id="roundN"></select>
+      </div>
+      <div>
+        <label class="check" title="п. 2.3.4: K_м = 1,25 для БТВТ, 1,15 для АТ"><input id="utg" type="checkbox"> <span>Масштаб УТГ (K<sub>м</sub> 1,25 БТВТ / 1,15 АТ)</span></label>
+        <label class="check" title="Как в п. 2.5 методички: P_ут округляется до 0,1 %"><input id="roundPct" type="checkbox"> <span>Округлять % до 0,1</span></label>
       </div>
     </div>
   </section>
@@ -114,285 +189,662 @@
   <section class="card" id="grp-at"></section>
 
   <section class="card">
-    <h2>Итог и оценка ремонтных возможностей</h2>
-    <div class="grid">
-      <div>
-        <div class="hint">Совокупный выход ВВСТ, ед./сут.</div>
-        <div class="big" id="nTotal">—</div>
-        <div class="hint" id="nTotalDetail"></div>
-      </div>
-      <div>
-        <label for="q">Q — возможности по ремонту, ед./сут.</label>
-        <input id="q" type="number" min="0" step="0.1" placeholder="например, 3">
-      </div>
-      <div>
-        <div class="hint">Коэффициент соответствия K<sub>c</sub> = Q / N<sub>ВВСТ</sub></div>
-        <div class="big" id="kc">—</div>
-      </div>
-    </div>
-    <div id="verdict"></div>
-    <div class="row" style="margin-top:14px">
-      <button class="primary" id="example">Загрузить пример 2.5 (УТГ, оборона)</button>
-      <button id="reset">Очистить</button>
-    </div>
+    <h2>Итог за сутки</h2>
+    <div class="tiles" id="dayTiles"></div>
   </section>
 
   <section class="card">
-    <details>
-      <summary>Результаты проверки исходных материалов</summary>
-      <ol>
-        <li><b>Табл. 1, «Тягачи танковые»:</b> «Всего» во всех остальных строках = БП + КР + СР,
-          а здесь 0,44 + 0,33 + 1,1 = 1,87 ≠ 1,21. Вероятно, СР должно быть 0,44
-          (0,44 + 0,33 + 0,44 = 1,21). В калькуляторе оставлено 1,1 как в тексте — сверьте с первоисточником.</li>
-        <li><b>П. 2.5.1, P<sub>СР</sub> для БТР:</b> 1,0 × 1,0 × 0,4 × 1,1 × 1,25 = 0,55 ≈ <b>0,6 %</b>, а не 0,5 %.
-          Соответственно совокупный выход БТВ = 0,5 + 0,4 + 0,6 + 1,0 = <b>2,5 %</b> (не 2,4 %).</li>
-        <li><b>П. 2.6.1:</b> N<sub>СР</sub> = 13 × 0,6 / 100 = 0,08 ед.; совокупный выход БТВ =
-          <b>0,33 ед./сут.</b> (не 0,32); п. 2.6.3: N<sub>ВВСТ</sub> = 0,33 + 3,1 = <b>3,43 ед./сут.</b></li>
-        <li><b>П. 2.5.2, K<sub>рб</sub> для АТ:</b> в примере взято 1,1 (строка «БТВТ»), хотя по табл. 4 для
-          автомобилей логичнее строка «Средства МТО» (1,0 на подготовленном рубеже). С K<sub>рб</sub> = 1,0 выход АТ
-          ≈ 2,9 % и 2,8 ед./сут. В калькуляторе строка табл. 4 выбирается для каждой группы.</li>
-        <li><b>Обозначения:</b> в тексте K<sub>зс</sub>, в программе K_эс — это один и тот же коэффициент.
-          В программе K(t) подписан как «коэффициент воздействия средств противника», а в методике это
-          коэффициент <b>продолжительности операции</b> (табл. 2).</li>
-        <li><b>Программа (Python):</b> K<sub>м</sub> = 1,25 жёстко задан, поэтому для АТ (1,15) она считает неверно;
-          <code>N_абс = round(N_сп × P / 100)</code> округляет до целого — для примера 13 × 2,4 / 100 = 0,31 даёт <b>0</b> ед.;
-          нет расчёта по видам (БП/КР/СР/ТР) в единицах и оценки K<sub>c</sub> (п. 2.7). Здесь эти недочёты исправлены.</li>
-        <li>Прочие арифметические значения (АТ в п. 2.5.2 и 2.6.2) пересчитаны — совпадают.</li>
-      </ol>
+    <h2>Оценка ремонтных возможностей (п. 2.7)</h2>
+    <div class="grid">
+      <div><label for="qTotal" title="Общие возможности сил и средств ТО и АО по ремонту. Если пусто — сумма Q по видам ремонта.">Q общее, ед./сут.</label><input id="qTotal" inputmode="decimal" placeholder="= Q_ТР + Q_СР + Q_КР"></div>
+      <div><label for="qTr" title="Возможности по текущему ремонту — ограничивают возврат ТР в расчёте на период">Q<sub>ТР</sub>, ед./сут.</label><input id="qTr" inputmode="decimal" placeholder="не ограничено"></div>
+      <div><label for="qSr" title="Возможности по среднему ремонту — ограничивают возврат СР в расчёте на период">Q<sub>СР</sub>, ед./сут.</label><input id="qSr" inputmode="decimal" placeholder="не ограничено"></div>
+      <div><label for="qKr" title="Возможности по капитальному ремонту / отправке в ремонтные органы">Q<sub>КР</sub>, ед./сут.</label><input id="qKr" inputmode="decimal" placeholder="—"></div>
+      <div><label for="qEvac" title="Возможности эвакуационных средств (потребность = БП + КР)">Q<sub>эвак</sub>, ед./сут.</label><input id="qEvac" inputmode="decimal" placeholder="—"></div>
+    </div>
+    <h3>Факторы, снижающие возможности (K<sub>сн</sub>)</h3>
+    <div id="factors"></div>
+    <div class="hint" id="kRedHint"></div>
+    <div class="table-wrap" style="margin-top:10px">
+      <table class="cards" id="repairTable">
+        <thead><tr><th>Вид</th><th>Потребность, ед./сут.</th><th>Q, ед./сут.</th><th title="Q × K_сн">Q с учётом K<sub>сн</sub></th><th>K<sub>c</sub></th><th>Оценка</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div id="verdict"></div>
+  </section>
+
+  <section class="card">
+    <h2>Прогноз на период операции</h2>
+    <div class="grid" style="margin-bottom:12px">
+      <div>
+        <label for="simBase" title="По методике проценты считаются от наличия на начало операции">Процент потерь считать от</label>
+        <select id="simBase">
+          <option value="initial">списочного состава на начало (как в методике)</option>
+          <option value="current">текущего наличия исправной техники</option>
+        </select>
+      </div>
+      <div><label for="trDays" title="Через сколько суток техника из ТР может вернуться в строй">Срок ТР, сут.</label><input id="trDays" inputmode="numeric"></div>
+      <div><label for="srDays" title="Через сколько суток техника из СР может вернуться в строй">Срок СР, сут.</label><input id="srDays" inputmode="numeric"></div>
+      <div><label for="krDays" title="0 — техника, эвакуированная в КР, в ходе операции не возвращается">Возврат из КР через, сут.</label><input id="krDays" inputmode="numeric"></div>
+    </div>
+    <div class="tiles" id="simTiles"></div>
+    <div class="legend" id="legend"></div>
+    <div class="chart" id="chart"><div class="tip" id="tip"></div></div>
+    <div class="hint">Исправная техника, % от списочного состава, по суткам. Возврат ТР и СР ограничен Q<sub>ТР</sub> и Q<sub>СР</sub> (с учётом K<sub>сн</sub>), если они заданы.</div>
+    <details style="margin-top:12px">
+      <summary>Таблица по суткам</summary>
+      <div class="table-wrap" style="margin-top:8px"><table class="cards" id="simTable"></table></div>
     </details>
   </section>
+
+  <section class="card" id="solutionCard">
+    <div class="row" style="justify-content:space-between;margin-bottom:8px">
+      <h2 style="margin:0">Ход решения</h2>
+      <div class="row no-print"><button id="btnCopy">Копировать текст</button></div>
+    </div>
+    <div class="solution" id="solution"></div>
+  </section>
+
+  <section class="card" id="compare">
+    <h2>Сравнение вариантов</h2>
+    <div class="row" style="margin-bottom:10px">
+      <input id="scName" placeholder="Название варианта, например «1-й эшелон, наступление»" style="flex:1;min-width:200px">
+      <button class="primary" id="btnSave">Сохранить вариант</button>
+    </div>
+    <div class="table-wrap"><table class="cards" id="compareTable"></table></div>
+    <div class="hint" id="storageHint">Варианты сохраняются в этом браузере.</div>
+  </section>
+
+  <details class="card" id="refsCard">
+    <summary>Справочные таблицы 1–4 (можно редактировать)</summary>
+    <div class="row no-print" style="margin:12px 0">
+      <button id="btnFixTractor" title="Всего = БП + КР + СР = 1,21 при СР = 0,44">Исправить СР тягачей на 0,44</button>
+      <button id="btnRefsReset">Восстановить значения методички</button>
+    </div>
+    <div class="hint">Изменение нормы в табл. 1 применяется к строкам расчёта этого вида техники. Строки, где «Всего» ≠ БП + КР + СР, подсвечены.</div>
+    <div id="refs"></div>
+  </details>
+
+  <details class="card" id="checkCard">
+    <summary>Результаты проверки методички и исходной программы</summary>
+    <ol>
+      <li><b>Табл. 1, «Тягачи танковые»:</b> «Всего» во всех строках = БП + КР + СР, а здесь 0,44 + 0,33 + 1,1 = 1,87 ≠ 1,21.
+        Вероятно, СР = 0,44. По умолчанию оставлено 1,1 как в тексте — кнопка исправления есть в справочниках.</li>
+      <li><b>П. 2.5.1, P<sub>СР</sub> для БТР:</b> 1,0 × 1,0 × 0,4 × 1,1 × 1,25 = 0,55 ≈ <b>0,6 %</b>, а не 0,5 %.
+        Совокупный выход БТВТ = <b>2,5 %</b> (не 2,4 %).</li>
+      <li><b>П. 2.6.1 и 2.6.3:</b> N<sub>СР</sub> = 13 × 0,6 / 100 = 0,08 ед.; выход БТВТ = <b>0,33 ед./сут.</b> (не 0,32);
+        N<sub>ВВСТ</sub> = 0,33 + 3,1 = <b>3,43 ед./сут.</b> (не 3,42).</li>
+      <li><b>П. 2.6:</b> для БТВТ единицы округлены до 0,01, а для АТ — до 0,1. Режим округления «как в методичке» воспроизводит это.</li>
+      <li><b>П. 2.5.2, K<sub>рб</sub> для АТ:</b> в примере взято 1,1 (строка «БТВТ»), хотя для автомобилей логичнее строка «Средства МТО» (1,0).
+        Пример загружается как в методичке; при «Очистить» для АТ по умолчанию выбирается «Средства МТО».</li>
+      <li><b>Обозначения:</b> K<sub>зс</sub> в тексте и K_эс в программе — один коэффициент. В программе K(t) подписан как
+        «коэффициент воздействия средств противника», а по методике это коэффициент продолжительности операции.</li>
+      <li><b>Программа (Python):</b> K<sub>м</sub> = 1,25 для всех групп (для АТ нужно 1,15); итог в единицах округлялся до целого
+        (13 × 2,4 / 100 → 0 ед.); не было единиц по видам и оценки K<sub>c</sub>. Исправленная версия — <span class="mono">loss_calc.py</span>.</li>
+    </ol>
+  </details>
 </main>
 
+<script src="calc.js"></script>
 <script>
-// Таблица 1 — нормы среднесуточных потерь, %
-const NORMS = {
-  btvt: [
-    { name: 'Танки', bp: 2.0, kr: 1.2, sr: 2.2, tr: 2.8 },
-    { name: 'БМП', bp: 1.6, kr: 1.0, sr: 1.6, tr: 2.6 },
-    { name: 'БТР', bp: 0.9, kr: 0.7, sr: 1.0, tr: 1.9 },
-    { name: 'Разведывательные машины', bp: 1.3, kr: 1.0, sr: 1.3, tr: 2.4 },
-    { name: 'КШМ', bp: 1.3, kr: 1.0, sr: 1.3, tr: 2.4 },
-    { name: 'Тягачи танковые', bp: 0.44, kr: 0.33, sr: 1.1, tr: 1.5 },
-  ],
-  at: [
-    { name: 'Автомобили общего назначения', bp: 0.9, kr: 0.6, sr: 0.8, tr: 4.0 },
-    { name: 'Автомобили специальные', bp: 1.2, kr: 0.8, sr: 1.0, tr: 4.5 },
-    { name: 'Грузовые автомобили', bp: 1.3, kr: 1.1, sr: 1.2, tr: 5.0 },
-    { name: 'Автомобили под монтаж вооружения', bp: 1.6, kr: 1.2, sr: 1.3, tr: 6.5 },
-  ],
-};
-// Таблица 2 — K(t)
-const KT = [
-  [10, 1.72, 1.44], [15, 1.60, 1.32], [20, 1.40, 1.18], [25, 1.26, 1.05],
-  [30, 1.16, 1.00], [35, 1.10, 1.00], [40, 1.05, 1.00], [45, 1.00, 1.00], [50, 0.95, 0.95],
-];
-// Таблица 3 — K_зс [мин, макс]
-const KZS = {
-  def: { e1: [1.25, 1.35], other: [0.8, 0.9], e2: [0.3, 0.4] },
-  off: { e1: [1.35, 1.45], other: [0.85, 0.95], e2: [0.35, 0.45] },
-};
-// Таблица 4 — K_рб
-const KRB = [
-  { name: 'Бронетанковое вооружение и техника', prep: 1.1, unprep: 1.3 },
-  { name: 'Артиллерийское вооружение', prep: 1.0, unprep: 1.5 },
-  { name: 'Средства боевого обеспечения', prep: 1.0, unprep: 1.2 },
-  { name: 'Средства МТО', prep: 1.0, unprep: 1.2 },
-];
-const GROUPS = {
-  btvt: { title: 'Бронетанковая техника (БТВТ)', km: 1.25, krbDefault: 0 },
-  at: { title: 'Автомобильная техника (АТ)', km: 1.15, krbDefault: 3 },
-};
-const KINDS = [['bp', 'БП'], ['kr', 'КР'], ['sr', 'СР'], ['tr', 'ТР']];
+(function () {
+  'use strict';
+  const C = window.LossCalc;
+  const KEY_CUR = 'lossCalc.v2.current';
+  const KEY_SC = 'lossCalc.v2.scenarios';
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const clone = (o) => JSON.parse(JSON.stringify(o));
+  const fmt = C.fmt;
+  const fs = C.fmtShort;
+  const num = (v) => {
+    const s = String(v == null ? '' : v).trim().replace(/\s/g, '').replace(',', '.');
+    if (s === '') return null;
+    const x = Number(s);
+    return Number.isFinite(x) ? x : NaN;
+  };
+  const numOr0 = (v) => { const x = num(v); return x == null || Number.isNaN(x) ? 0 : x; };
+  const numStr = (x) => (x == null || !Number.isFinite(x) ? '' : String(x).replace('.', ','));
 
-const $ = (id) => document.getElementById(id);
-const fmt = (x, d = 2) => Number.isFinite(x)
-  ? x.toLocaleString('ru-RU', { minimumFractionDigits: d, maximumFractionDigits: d }) : '—';
-const num = (v) => { const x = parseFloat(String(v).replace(',', '.')); return Number.isFinite(x) ? x : 0; };
-// Арифметическое округление (0,55 → 0,6), без ошибок двоичного представления
-const round1 = (x) => Math.round((x + Number.EPSILON) * 10) / 10;
+  const storage = {
+    get(k) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : null; } catch (e) { return null; } },
+    set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } },
+  };
 
-const state = { btvt: [], at: [], krb: { btvt: 0, at: 3 } };
+  let refs;
+  let input;
+  let last = {};
 
-function kt(days, action) {
-  const col = action === 'def' ? 1 : 2;
-  if (days <= KT[0][0]) return { k: KT[0][col], note: 'по табл. 2 (≤ 10 сут.)' };
-  const last = KT[KT.length - 1];
-  if (days >= last[0]) return { k: last[col], note: 'по табл. 2 (≥ 50 сут.)' };
-  for (let i = 0; i < KT.length - 1; i++) {
-    const [d0, d1] = [KT[i][0], KT[i + 1][0]];
-    if (days === d0) return { k: KT[i][col], note: 'по табл. 2' };
-    if (days > d0 && days < d1) {
-      const k = KT[i][col] + (KT[i + 1][col] - KT[i][col]) * (days - d0) / (d1 - d0);
-      return { k: Math.round(k * 1000) / 1000, note: `интерполяция между ${d0} и ${d1} сут.` };
+  function isValidState(o) {
+    return o && o.input && o.refs && o.input.groups && o.input.groups.btvt && o.input.groups.at && o.refs.norms && o.refs.kt && o.refs.kzs && o.refs.krb && o.refs.km;
+  }
+
+  function loadState() {
+    const saved = storage.get(KEY_CUR);
+    if (isValidState(saved)) {
+      refs = saved.refs;
+      input = Object.assign(C.defaultInput(refs), saved.input);
+      input.repair = Object.assign(C.defaultInput(refs).repair, saved.input.repair);
+      input.sim = Object.assign(C.defaultInput(refs).sim, saved.input.sim);
+    } else {
+      refs = C.defaultRefs();
+      input = C.exampleInput(refs);
     }
   }
-  return { k: 1, note: '' };
-}
+  const persist = () => storage.set(KEY_CUR, { input, refs });
 
-function renderGroup(g) {
-  const cfg = GROUPS[g];
-  const el = $('grp-' + g);
-  const typeOpts = NORMS[g].map((n, i) => `<option value="${i}">${n.name}</option>`).join('');
-  const krbOpts = KRB.map((r, i) => `<option value="${i}" ${i === state.krb[g] ? 'selected' : ''}>${r.name}</option>`).join('');
-  el.innerHTML = `
-    <h2>${cfg.title}</h2>
-    <div class="grid" style="margin-bottom:12px">
-      <div><label>Строка табл. 4 для K<sub>рб</sub></label><select data-krb>${krbOpts}</select></div>
-      <div><label>Применяемые коэффициенты</label><div data-coefs></div></div>
-    </div>
-    <div class="table-wrap"><table>
-      <thead><tr>
-        <th>Вид ВВСТ</th><th>N<sub>сп</sub>, ед.</th>
-        ${KINDS.map(([, t]) => `<th>P<sub>ср</sub> ${t}, %</th>`).join('')}
-        ${KINDS.map(([, t]) => `<th>${t}, %</th>`).join('')}
-        ${KINDS.map(([, t]) => `<th>${t}, ед.</th>`).join('')}
-        <th>Всего, ед.</th><th></th>
-      </tr></thead>
-      <tbody></tbody>
-      <tfoot></tfoot>
-    </table></div>
-    <div class="row" style="margin-top:10px"><button data-add>+ Добавить вид техники</button></div>`;
-  el.querySelector('[data-krb]').onchange = (e) => { state.krb[g] = +e.target.value; recalc(); };
-  el.querySelector('[data-add]').onclick = () => { state[g].push(newRow(g, 0, 0)); drawRows(g); recalc(); };
-  el._typeOpts = typeOpts;
-  drawRows(g);
-}
+  // ---------- Условия ----------
+  function fillSelect(el, map) { el.innerHTML = Object.entries(map).map(([v, t]) => `<option value="${v}">${esc(t)}</option>`).join(''); }
+  fillSelect($('action'), C.ACTIONS);
+  fillSelect($('echelon'), C.ECHELONS);
+  fillSelect($('line'), C.LINES);
+  fillSelect($('roundN'), C.ROUND_N_MODES);
 
-function newRow(g, typeIdx, count) {
-  const n = NORMS[g][typeIdx];
-  return { type: typeIdx, count, bp: n.bp, kr: n.kr, sr: n.sr, tr: n.tr };
-}
+  function syncForm() {
+    $('action').value = input.action;
+    $('days').value = numStr(input.days);
+    $('echelon').value = input.echelon;
+    $('kzs').value = numStr(input.kzs);
+    $('line').value = input.line;
+    $('roundN').value = input.roundN;
+    $('utg').checked = !!input.utg;
+    $('roundPct').checked = !!input.roundPct;
+    $('qTotal').value = numStr(input.repair.qTotal);
+    $('qTr').value = numStr(input.repair.tr);
+    $('qSr').value = numStr(input.repair.sr);
+    $('qKr').value = numStr(input.repair.kr);
+    $('qEvac').value = numStr(input.repair.evac);
+    $('simBase').value = input.sim.base;
+    $('trDays').value = numStr(input.sim.trDays);
+    $('srDays').value = numStr(input.sim.srDays);
+    $('krDays').value = numStr(input.sim.krDays);
+    renderFactors();
+  }
 
-function drawRows(g) {
-  const el = $('grp-' + g);
-  const tbody = el.querySelector('tbody');
-  tbody.innerHTML = '';
-  state[g].forEach((r, i) => {
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td><select>${el._typeOpts}</select></td>
-      <td><input type="number" min="0" step="1" data-f="count" value="${r.count}"></td>
-      ${KINDS.map(([k]) => `<td><input type="number" min="0" step="0.01" data-f="${k}" value="${r[k]}"></td>`).join('')}
-      ${KINDS.map(([k]) => `<td data-p="${k}"></td>`).join('')}
-      ${KINDS.map(([k]) => `<td data-n="${k}"></td>`).join('')}
-      <td data-n="sum"></td>
-      <td><button class="del" title="Удалить">✕</button></td>`;
-    const sel = tr.querySelector('select');
-    sel.value = r.type;
-    sel.onchange = () => {
-      const n = NORMS[g][+sel.value];
-      Object.assign(r, { type: +sel.value, bp: n.bp, kr: n.kr, sr: n.sr, tr: n.tr });
-      KINDS.forEach(([k]) => { tr.querySelector(`[data-f="${k}"]`).value = r[k]; });
+  function setKzsDefault() {
+    input.kzs = refs.kzs[input.action][input.echelon][1];
+    $('kzs').value = numStr(input.kzs);
+  }
+
+  function bindNum(id, setter) {
+    $(id).addEventListener('input', () => {
+      const v = num($(id).value);
+      $(id).classList.toggle('bad-input', Number.isNaN(v));
+      setter(Number.isNaN(v) ? NaN : v);
       recalc();
-    };
-    tr.querySelectorAll('input[data-f]').forEach((inp) => {
-      inp.oninput = () => { r[inp.dataset.f] = num(inp.value); recalc(); };
     });
-    tr.querySelector('.del').onclick = () => { state[g].splice(i, 1); drawRows(g); recalc(); };
-    tbody.appendChild(tr);
-  });
-}
+  }
+  $('action').onchange = () => { input.action = $('action').value; setKzsDefault(); recalc(); };
+  $('echelon').onchange = () => { input.echelon = $('echelon').value; setKzsDefault(); recalc(); };
+  $('line').onchange = () => { input.line = $('line').value; recalc(); };
+  $('roundN').onchange = () => { input.roundN = $('roundN').value; recalc(); };
+  $('utg').onchange = () => { input.utg = $('utg').checked; recalc(); };
+  $('roundPct').onchange = () => { input.roundPct = $('roundPct').checked; recalc(); };
+  bindNum('days', (v) => { input.days = v == null ? NaN : v; });
+  bindNum('kzs', (v) => { input.kzs = v == null ? NaN : v; });
+  bindNum('qTotal', (v) => { input.repair.qTotal = v; });
+  bindNum('qTr', (v) => { input.repair.tr = v; });
+  bindNum('qSr', (v) => { input.repair.sr = v; });
+  bindNum('qKr', (v) => { input.repair.kr = v; });
+  bindNum('qEvac', (v) => { input.repair.evac = v; });
+  $('simBase').onchange = () => { input.sim.base = $('simBase').value; recalc(); };
+  bindNum('trDays', (v) => { input.sim.trDays = v || 1; });
+  bindNum('srDays', (v) => { input.sim.srDays = v || 1; });
+  bindNum('krDays', (v) => { input.sim.krDays = v || 0; });
 
-function recalc() {
-  const action = $('action').value;
-  const days = num($('days').value);
-  const { k: kT, note } = kt(days, action);
-  $('ktHint').textContent = `K(t) = ${fmt(kT, 3).replace(/0+$/, '').replace(/,$/, '')} — ${note}`;
-  const [lo, hi] = KZS[action][$('echelon').value];
-  $('kzsHint').textContent = `Диапазон по табл. 3: ${fmt(lo)}–${fmt(hi)}`;
-  const kzs = num($('kzs').value);
-  const lineKey = $('line').value;
-  const utg = $('utg').checked;
-  const doRound = $('roundPct').checked;
+  function renderFactors() {
+    $('factors').innerHTML = C.REDUCTION_FACTORS.map((f) => {
+      const s = input.repair.factors[f.key];
+      return `<div class="row" style="margin-bottom:6px;flex-wrap:nowrap">
+        <label class="check" style="flex:1;margin:0"><input type="checkbox" data-fk="${f.key}" ${s.on ? 'checked' : ''}> <span>${esc(f.name)}</span></label>
+        <input data-fv="${f.key}" value="${numStr(s.k)}" inputmode="decimal" style="width:80px" title="Коэффициент снижения, 0…1">
+      </div>`;
+    }).join('');
+    $('factors').querySelectorAll('[data-fk]').forEach((el) => {
+      el.onchange = () => { input.repair.factors[el.dataset.fk].on = el.checked; recalc(); };
+    });
+    $('factors').querySelectorAll('[data-fv]').forEach((el) => {
+      el.oninput = () => { const v = num(el.value); input.repair.factors[el.dataset.fv].k = v == null ? NaN : v; recalc(); };
+    });
+  }
 
-  let total = 0;
-  const parts = [];
-  for (const g of ['btvt', 'at']) {
+  // ---------- Группы техники ----------
+  function renderGroup(g) {
     const el = $('grp-' + g);
-    const krb = KRB[state.krb[g]][lineKey];
-    const km = utg ? GROUPS[g].km : 1;
-    const factor = kT * kzs * krb * km;
-    el.querySelector('[data-coefs]').innerHTML =
-      `<span class="coef">K(t) ${fmt(kT, 3)}</span><span class="coef">K<sub>зс</sub> ${fmt(kzs)}</span>` +
-      `<span class="coef">K<sub>рб</sub> ${fmt(krb, 1)}</span><span class="coef">K<sub>м</sub> ${fmt(km)}</span>` +
-      `<span class="coef">Произведение ${fmt(factor, 4)}</span>`;
-
-    const sumN = { bp: 0, kr: 0, sr: 0, tr: 0, sum: 0 };
-    let sumCount = 0;
-    el.querySelectorAll('tbody tr').forEach((tr, i) => {
-      const r = state[g][i];
-      let rowN = 0;
-      for (const [k] of KINDS) {
-        let p = r[k] * factor;
-        if (doRound) p = round1(p);
-        const n = r.count * p / 100;
-        rowN += n; sumN[k] += n;
-        tr.querySelector(`[data-p="${k}"]`).textContent = fmt(p, doRound ? 1 : 3);
-        tr.querySelector(`[data-n="${k}"]`).textContent = fmt(n);
-      }
-      sumN.sum += rowN; sumCount += r.count;
-      tr.querySelector('[data-n="sum"]').textContent = fmt(rowN);
+    const gi = input.groups[g];
+    const krbOpts = refs.krb.map((r, i) => `<option value="${i}" ${i === gi.krbRow ? 'selected' : ''}>${esc(r.name)}</option>`).join('');
+    const typeOpts = refs.norms[g].map((n, i) => `<option value="${i}">${esc(n.name)}</option>`).join('');
+    const K = C.KINDS;
+    el.innerHTML = `
+      <h2>${C.GROUP_TITLES[g]}</h2>
+      <div class="grid" style="margin-bottom:12px">
+        <div><label title="Какую строку табл. 4 применять к этой группе">Строка табл. 4 для K<sub>рб</sub></label><select data-krb>${krbOpts}</select></div>
+        <div><span class="lbl">Применяемые коэффициенты</span><div data-coefs></div></div>
+      </div>
+      <div class="table-wrap"><table class="cards">
+        <thead><tr>
+          <th>Вид ВВСТ</th><th title="Списочный состав">N<sub>сп</sub>, ед.</th>
+          ${K.map((k) => `<th title="Норма табл. 1: ${k.name.toLowerCase()}">P<sub>ср</sub> ${k.short}, %</th>`).join('')}
+          ${K.map((k) => `<th title="Прогноз за сутки, %">${k.short}, %</th>`).join('')}
+          ${K.map((k) => `<th title="Прогноз за сутки, единиц">${k.short}, ед.</th>`).join('')}
+          <th>Всего, ед.</th><th></th>
+        </tr></thead>
+        <tbody>${gi.rows.map((r, i) => `<tr data-i="${i}">
+          <td data-label="Вид ВВСТ"><select data-type>${typeOpts}</select></td>
+          <td data-label="Списочный состав, ед."><input data-f="count" inputmode="numeric" value="${numStr(r.count)}"></td>
+          ${K.map((k) => `<td data-label="Норма ${k.short}, %"><input data-f="${k.key}" inputmode="decimal" value="${numStr(r[k.key])}"></td>`).join('')}
+          ${K.map((k) => `<td data-label="${k.short} за сутки, %" data-p="${k.key}"></td>`).join('')}
+          ${K.map((k) => `<td data-label="${k.short} за сутки, ед." data-n="${k.key}"></td>`).join('')}
+          <td data-label="Всего, ед." data-n="sum"></td>
+          <td data-label=""><button class="del" title="Удалить строку">✕</button></td>
+        </tr>`).join('')}</tbody>
+        <tfoot></tfoot>
+      </table></div>
+      <div class="row no-print" style="margin-top:10px"><button data-add>+ Добавить вид техники</button></div>`;
+    el.querySelector('[data-krb]').onchange = (e) => { gi.krbRow = +e.target.value; recalc(); };
+    el.querySelector('[data-add]').onclick = () => { gi.rows.push(C.newRow(refs, g, 0, 0)); renderGroup(g); recalc(); };
+    el.querySelectorAll('tbody tr').forEach((tr) => {
+      const r = gi.rows[+tr.dataset.i];
+      const sel = tr.querySelector('[data-type]');
+      sel.value = r.type;
+      sel.onchange = () => {
+        const n = refs.norms[g][+sel.value];
+        Object.assign(r, { type: +sel.value, bp: n.bp, kr: n.kr, sr: n.sr, tr: n.tr });
+        C.KIND_KEYS.forEach((k) => { tr.querySelector(`[data-f="${k}"]`).value = numStr(r[k]); });
+        recalc();
+      };
+      tr.querySelectorAll('input[data-f]').forEach((inp) => {
+        inp.oninput = () => {
+          const v = num(inp.value);
+          inp.classList.toggle('bad-input', Number.isNaN(v) || (v != null && v < 0));
+          r[inp.dataset.f] = v == null ? 0 : v;
+          recalc();
+        };
+      });
+      tr.querySelector('.del').onclick = () => { gi.rows.splice(+tr.dataset.i, 1); renderGroup(g); recalc(); };
     });
-    el.querySelector('tfoot').innerHTML = state[g].length ? `<tr>
-      <td>Итого</td><td>${sumCount}</td><td colspan="8"></td>
-      ${KINDS.map(([k]) => `<td>${fmt(sumN[k])}</td>`).join('')}
-      <td>${fmt(sumN.sum)}</td><td></td></tr>` : '';
-    total += sumN.sum;
-    parts.push(`${g === 'btvt' ? 'БТВТ' : 'АТ'}: ${fmt(sumN.sum)}`);
   }
-  $('nTotal').textContent = fmt(total);
-  $('nTotalDetail').textContent = parts.join(' + ');
 
-  const qRaw = $('q').value.trim();
-  const v = $('verdict');
-  if (qRaw === '' || total <= 0) { $('kc').textContent = '—'; v.className = ''; v.textContent = ''; return; }
-  const kc = num(qRaw) / total;
-  $('kc').textContent = fmt(kc);
-  if (kc >= 1) {
-    v.className = 'verdict ok';
-    v.textContent = 'Kc ≥ 1 — возможностей ремонтных подразделений достаточно.';
-  } else {
-    v.className = 'verdict bad';
-    v.textContent = `Kc < 1 — дефицит ремонтных мощностей ${fmt(total - num(qRaw))} ед./сут., требуется усиление.`;
+  function updateGroupOutputs(g, day) {
+    const el = $('grp-' + g);
+    const G = day.groups[g];
+    const pd = input.roundPct ? 1 : 3;
+    const nd = G.dec == null ? 2 : G.dec;
+    el.querySelector('[data-coefs]').innerHTML =
+      `<span class="coef" title="Табл. 2 — ${esc(day.kt.note)}">K(t) ${fmt(day.kt.k)}</span>` +
+      `<span class="coef" title="Табл. 3">K<sub>зс</sub> ${fmt(input.kzs)}</span>` +
+      `<span class="coef" title="Табл. 4 — ${esc(G.krbName)}">K<sub>рб</sub> ${fmt(G.krb)}</span>` +
+      `<span class="coef" title="п. 2.3.4">K<sub>м</sub> ${fmt(G.km)}</span>` +
+      `<span class="coef" title="K(t) × K_зс × K_рб × K_м">Произведение ${fmt(G.factor, 4)}</span>`;
+    el.querySelectorAll('tbody tr').forEach((tr) => {
+      const r = G.rows[+tr.dataset.i];
+      C.KIND_KEYS.forEach((k) => {
+        tr.querySelector(`[data-p="${k}"]`).textContent = fmt(r.p[k], pd);
+        tr.querySelector(`[data-n="${k}"]`).textContent = fmt(r.n[k], nd);
+      });
+      tr.querySelector('[data-n="sum"]').textContent = fmt(r.nSum, nd);
+    });
+    el.querySelector('tfoot').innerHTML = G.rows.length ? `<tr>
+      <td data-label="">Итого ${C.GROUP_NAMES[g]}</td><td data-label="Списочный состав, ед.">${G.count}</td>
+      <td colspan="8" data-label=""></td>
+      ${C.KINDS.map((k) => `<td data-label="${k.short}, ед.">${fmt(G.sumN[k.key], nd)}</td>`).join('')}
+      <td data-label="Всего, ед./сут.">${fmt(G.total, nd)}</td><td data-label=""></td></tr>` : '';
   }
-}
 
-function setKzsDefault() {
-  const [, hi] = KZS[$('action').value][$('echelon').value];
-  $('kzs').value = hi;
-}
+  // ---------- Итоги и оценка ----------
+  function renderDayTiles(day) {
+    const d = 2;
+    $('dayTiles').innerHTML = [
+      ['N<sub>ВВСТ</sub>, ед./сут.', fs(day.total), `БТВТ ${fs(day.groups.btvt.total)} + АТ ${fs(day.groups.at.total)}`],
+      ...C.KINDS.map((k) => [`${k.name}, ед./сут.`, fmt(day.sumKinds[k.key], d), '']),
+    ].map(([k, v, h]) => `<div class="tile"><div class="k">${k}</div><div class="v">${v}</div>${h ? `<div class="hint">${h}</div>` : ''}</div>`).join('');
+  }
 
-function loadExample() {
-  $('action').value = 'def';
-  $('days').value = 45;
-  $('echelon').value = 'e2';
-  $('kzs').value = 0.4;
-  $('line').value = 'prep';
-  $('utg').checked = true;
-  $('roundPct').checked = true;
-  state.krb = { btvt: 0, at: 0 }; // как в примере 2.5: K_рб = 1,1 для обеих групп
-  state.btvt = [newRow('btvt', 2, 13)];
-  state.at = [newRow('at', 0, 96)];
-  $('q').value = '';
-  renderGroup('btvt'); renderGroup('at'); recalc();
-}
+  function renderRepair(repair) {
+    const red = repair.reduction;
+    $('kRedHint').textContent = red.used.length ? `K_сн = ${red.used.map((u) => fs(u.k)).join(' × ')} = ${fs(red.k)}` : 'Факторы не учитываются (K_сн = 1).';
+    const verdictCell = (kc, deficit) => (kc == null ? '—' : kc >= 1
+      ? '<span class="status ok">✓ достаточно</span>'
+      : `<span class="status bad">✕ дефицит ${fmt(deficit, 2)}</span>`);
+    const rows = [...repair.rows, { label: 'Всего (N_ВВСТ)', ...repair.overall }];
+    $('repairTable').querySelector('tbody').innerHTML = rows.map((r, i) => `<tr${i === rows.length - 1 ? ' style="font-weight:600"' : ''}>
+      <td data-label="Вид">${esc(r.label)}</td>
+      <td data-label="Потребность, ед./сут.">${fmt(r.need, 2)}</td>
+      <td data-label="Q, ед./сут.">${r.q == null ? '—' : fs(r.q)}${r.qTotalFromKinds ? ' <span class="hint">(сумма)</span>' : ''}</td>
+      <td data-label="Q с учётом K_сн">${r.qEff == null ? '—' : fmt(r.qEff, 2)}</td>
+      <td data-label="K_c">${r.kc == null ? '—' : fmt(r.kc, 2)}</td>
+      <td data-label="Оценка">${verdictCell(r.kc, r.deficit)}</td></tr>`).join('');
+    const o = repair.overall;
+    const v = $('verdict');
+    if (o.kc == null) { v.className = ''; v.textContent = ''; return; }
+    v.className = 'verdict ' + (o.kc >= 1 ? 'ok' : 'bad');
+    v.textContent = o.kc >= 1
+      ? `✓ K_c = ${fmt(o.kc, 2)} ≥ 1 — возможностей ремонтных подразделений достаточно.`
+      : `✕ K_c = ${fmt(o.kc, 2)} < 1 — дефицит ремонтных мощностей ${fmt(o.deficit, 2)} ед./сут., требуется дополнительное усиление.`;
+  }
 
-function reset() {
-  state.btvt = [newRow('btvt', 0, 0)];
-  state.at = [newRow('at', 0, 0)];
-  state.krb = { btvt: GROUPS.btvt.krbDefault, at: GROUPS.at.krbDefault };
-  $('q').value = '';
-  renderGroup('btvt'); renderGroup('at'); recalc();
-}
+  // ---------- Расчёт на период ----------
+  function renderSim(sim) {
+    const t = sim.totals;
+    $('simTiles').innerHTML = [
+      ['Безвозвратные потери за операцию, ед.', fmt(t.bp, 1)],
+      ['Требуется эвакуировать (БП + КР), ед.', fmt(t.evac, 1)],
+      ['Возвращено в строй после ремонта, ед.', fmt(t.repaired, 1)],
+      ['Исправно к концу операции', t.finalPct.all == null ? '—' : `${fmt(t.finalInService.all, 1)} ед. · ${fmt(t.finalPct.all, 1)} %`],
+      ['Минимальная исправность', t.minReadiness ? `${fmt(t.minReadiness.pct, 1)} % · ${t.minReadiness.day}-е сут.` : '—'],
+      ['Остаётся в ремонте (ТР + СР), ед.', fmt(t.backlog.tr + t.backlog.sr, 1)],
+    ].map(([k, v]) => `<div class="tile"><div class="k">${k}</div><div class="v">${v}</div></div>`).join('');
+    drawChart(sim);
+    const hasB = sim.initial.btvt > 0;
+    const hasA = sim.initial.at > 0;
+    const cols = [
+      ['Сутки', (s) => s.day],
+      ...(hasB ? [['Исправно БТВТ, ед.', (s) => fmt(s.inService.btvt, 1)]] : []),
+      ...(hasA ? [['Исправно АТ, ед.', (s) => fmt(s.inService.at, 1)]] : []),
+      ['Исправно, %', (s) => fmt(s.pct.all, 1)],
+      ['БП', (s) => fmt(s.fail.bp, 2)], ['КР', (s) => fmt(s.fail.kr, 2)], ['СР', (s) => fmt(s.fail.sr, 2)], ['ТР', (s) => fmt(s.fail.tr, 2)],
+      ['Возвращено', (s) => fmt(s.repaired, 2)],
+      ['Очередь ТР', (s) => fmt(s.backlog.tr, 2)], ['Очередь СР', (s) => fmt(s.backlog.sr, 2)],
+      ['БП всего', (s) => fmt(s.cumBp, 2)],
+    ];
+    $('simTable').innerHTML = `<thead><tr>${cols.map(([h]) => `<th>${h}</th>`).join('')}</tr></thead>
+      <tbody>${sim.series.slice(1).map((s) => `<tr>${cols.map(([h, f]) => `<td data-label="${h}">${f(s)}</td>`).join('')}</tr>`).join('')}</tbody>`;
+  }
 
-$('action').onchange = () => { setKzsDefault(); recalc(); };
-$('echelon').onchange = () => { setKzsDefault(); recalc(); };
-['days', 'kzs', 'q'].forEach((id) => { $(id).oninput = recalc; });
-['line', 'utg', 'roundPct'].forEach((id) => { $(id).onchange = recalc; });
-$('example').onclick = loadExample;
-$('reset').onclick = reset;
+  function drawChart(sim) {
+    const box = $('chart');
+    const tip = $('tip');
+    box.querySelectorAll('svg').forEach((s) => s.remove());
+    tip.style.display = 'none';
+    const series = [
+      { key: 'btvt', name: 'БТВТ', color: 'var(--series-1)' },
+      { key: 'at', name: 'АТ', color: 'var(--series-2)' },
+    ].filter((s) => sim.initial[s.key] > 0);
+    $('legend').innerHTML = series.map((s) => `<span style="--c:${s.color}">${s.name}</span>`).join('');
+    if (!series.length) { $('legend').textContent = 'Нет данных: укажите списочный состав.'; return; }
+    const W = Math.max(300, box.clientWidth || 600);
+    const H = 260;
+    const m = { l: 40, r: 64, t: 12, b: 30 };
+    const pw = W - m.l - m.r;
+    const ph = H - m.t - m.b;
+    const pts = sim.series;
+    const N = pts[pts.length - 1].day || 1;
+    let minPct = 100;
+    pts.forEach((p) => series.forEach((s) => { minPct = Math.min(minPct, p.pct[s.key]); }));
+    const yMin = Math.max(0, Math.floor((minPct - 5) / 10) * 10);
+    const x = (d) => m.l + d / N * pw;
+    const y = (v) => m.t + (100 - v) / (100 - yMin) * ph;
+    const yTicks = [];
+    const step = (100 - yMin) > 50 ? 20 : 10;
+    for (let v = yMin; v <= 100 + 1e-9; v += step) yTicks.push(v);
+    const xStep = N <= 10 ? 1 : N <= 30 ? 5 : 10;
+    const xTicks = [];
+    for (let d = 0; d <= N; d += xStep) xTicks.push(d);
+    let svg = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Исправная техника по суткам, % от списочного состава">`;
+    yTicks.forEach((v) => {
+      svg += `<line x1="${m.l}" x2="${m.l + pw}" y1="${y(v)}" y2="${y(v)}" stroke="var(--grid)" stroke-width="1"/>`;
+      svg += `<text x="${m.l - 6}" y="${y(v) + 4}" text-anchor="end">${v}%</text>`;
+    });
+    xTicks.forEach((d) => { svg += `<text x="${x(d)}" y="${H - 8}" text-anchor="middle">${d}</text>`; });
+    svg += `<line x1="${m.l}" x2="${m.l + pw}" y1="${m.t + ph}" y2="${m.t + ph}" stroke="var(--line)"/>`;
+    const labelYs = [];
+    series.forEach((s) => {
+      const d = pts.map((p, i) => `${i ? 'L' : 'M'}${x(p.day).toFixed(1)},${y(p.pct[s.key]).toFixed(1)}`).join('');
+      svg += `<path d="${d}" fill="none" stroke="${s.color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`;
+      const lp = pts[pts.length - 1];
+      let ly = y(lp.pct[s.key]) + 4;
+      labelYs.forEach((o) => { if (Math.abs(o - ly) < 14) ly = o + (ly >= o ? 14 : -14); });
+      labelYs.push(ly);
+      svg += `<text class="dl" x="${m.l + pw + 6}" y="${ly}">${s.name} ${fmt(lp.pct[s.key], 0)}%</text>`;
+    });
+    svg += `<g id="hover" style="display:none"><line id="hx" y1="${m.t}" y2="${m.t + ph}" stroke="var(--muted)" stroke-width="1" stroke-dasharray="3 3"/>`;
+    series.forEach((s) => { svg += `<circle data-s="${s.key}" r="4.5" fill="${s.color}" stroke="var(--card)" stroke-width="2"/>`; });
+    svg += `</g><rect x="${m.l}" y="${m.t}" width="${pw}" height="${ph}" fill="transparent" id="hit"/></svg>`;
+    box.insertAdjacentHTML('afterbegin', svg);
+    const svgEl = box.querySelector('svg');
+    const hover = svgEl.querySelector('#hover');
+    const move = (ev) => {
+      const rect = svgEl.getBoundingClientRect();
+      const px = (ev.clientX - rect.left) * W / rect.width;
+      const d = Math.max(0, Math.min(N, Math.round((px - m.l) / pw * N)));
+      const p = pts[d];
+      hover.style.display = '';
+      hover.querySelector('#hx').setAttribute('x1', x(d));
+      hover.querySelector('#hx').setAttribute('x2', x(d));
+      series.forEach((s) => {
+        const c = hover.querySelector(`[data-s="${s.key}"]`);
+        c.setAttribute('cx', x(d)); c.setAttribute('cy', y(p.pct[s.key]));
+      });
+      tip.innerHTML = `<div style="font-weight:600;margin-bottom:4px">${d === 0 ? 'Начало операции' : `${d}-е сутки`}</div>` +
+        series.map((s) => `<div><span class="sw" style="background:${s.color}"></span>${s.name}: ${fmt(p.inService[s.key], 1)} ед. · ${fmt(p.pct[s.key], 1)} %</div>`).join('') +
+        `<div class="muted">БП нарастающим итогом: ${fmt(p.cumBp, 1)} ед.</div>` +
+        (d ? `<div class="muted">Возвращено за сутки: ${fmt(p.repaired, 2)} ед.</div>` : '');
+      tip.style.display = 'block';
+      const sx = x(d) * rect.width / W;
+      const tw = tip.offsetWidth;
+      tip.style.left = `${sx + 12 + tw > rect.width ? sx - tw - 12 : sx + 12}px`;
+      tip.style.top = '8px';
+    };
+    const hit = svgEl.querySelector('#hit');
+    hit.addEventListener('pointermove', move);
+    hit.addEventListener('pointerdown', move);
+    hit.addEventListener('pointerleave', () => { hover.style.display = 'none'; tip.style.display = 'none'; });
+  }
 
-loadExample();
+  // ---------- Ход решения ----------
+  function renderSolution(lines) {
+    $('solution').innerHTML = lines.map((l) => `<div class="${l.t}">${esc(l.s)}</div>`).join('');
+  }
+
+  // ---------- Проверка ----------
+  function renderWarnings(list) {
+    const label = { error: 'Ошибка', warn: 'Внимание', info: 'Примечание' };
+    const order = { error: 0, warn: 1, info: 2 };
+    list.sort((a, b) => order[a.level] - order[b.level]);
+    $('warnCard').hidden = !list.length;
+    $('warnings').innerHTML = list.map((w) => `<li class="${w.level}"><b>${label[w.level]}:</b>${esc(w.text)}</li>`).join('');
+  }
+
+  // ---------- Справочники ----------
+  function renderRefs() {
+    const cell = (path, v, label) => `<td data-label="${label}"><input data-ref="${path}" inputmode="decimal" value="${numStr(v)}"></td>`;
+    let h = '';
+    for (const g of C.GROUP_KEYS) {
+      h += `<h3>Таблица 1 — ${C.GROUP_NAMES[g]}, нормы среднесуточных потерь, %</h3><div class="table-wrap"><table class="cards"><thead><tr>
+        <th>Наименование</th><th>Всего</th><th>БП</th><th>КР</th><th>СР</th><th>ТР</th><th title="Контроль: БП + КР + СР">Σ БП+КР+СР</th></tr></thead><tbody>`;
+      refs.norms[g].forEach((n, i) => {
+        const s = n.bp + n.kr + n.sr;
+        const bad = Math.abs(s - n.total) > 0.005;
+        h += `<tr class="${bad ? 'sum-mismatch' : ''}"><td class="name-cell" data-label="Наименование"><input data-ref="norms.${g}.${i}.name" data-text value="${esc(n.name)}"></td>
+          ${cell(`norms.${g}.${i}.total`, n.total, 'Всего')}${cell(`norms.${g}.${i}.bp`, n.bp, 'БП')}${cell(`norms.${g}.${i}.kr`, n.kr, 'КР')}
+          ${cell(`norms.${g}.${i}.sr`, n.sr, 'СР')}${cell(`norms.${g}.${i}.tr`, n.tr, 'ТР')}
+          <td data-label="Σ БП+КР+СР">${fs(s)}${bad ? ' ⚠' : ' ✓'}</td></tr>`;
+      });
+      h += '</tbody></table></div>';
+    }
+    h += `<h3>Таблица 2 — K(t)</h3><div class="table-wrap"><table class="cards"><thead><tr><th>Продолжительность, сут.</th><th>Оборона</th><th>Наступление</th></tr></thead><tbody>`;
+    refs.kt.forEach((r, i) => { h += `<tr>${cell(`kt.${i}.0`, r[0], 'Сутки').replace('<td', '<td style="text-align:left"')}${cell(`kt.${i}.1`, r[1], 'Оборона')}${cell(`kt.${i}.2`, r[2], 'Наступление')}</tr>`; });
+    h += '</tbody></table></div>';
+    h += `<h3>Таблица 3 — K<sub>зс</sub></h3><div class="table-wrap"><table class="cards"><thead><tr><th>Элемент построения</th><th>Оборона, мин</th><th>Оборона, макс</th><th>Наступление, мин</th><th>Наступление, макс</th></tr></thead><tbody>`;
+    Object.entries(C.ECHELONS).forEach(([e, name]) => {
+      h += `<tr><td data-label="Элемент">${esc(name)}</td>${cell(`kzs.def.${e}.0`, refs.kzs.def[e][0], 'Оборона, мин')}${cell(`kzs.def.${e}.1`, refs.kzs.def[e][1], 'Оборона, макс')}${cell(`kzs.off.${e}.0`, refs.kzs.off[e][0], 'Наступление, мин')}${cell(`kzs.off.${e}.1`, refs.kzs.off[e][1], 'Наступление, макс')}</tr>`;
+    });
+    h += '</tbody></table></div>';
+    h += `<h3>Таблица 4 — K<sub>рб</sub></h3><div class="table-wrap"><table class="cards"><thead><tr><th>Вид вооружения и техники</th><th>Подготовленный рубеж</th><th>Неподготовленный рубеж</th></tr></thead><tbody>`;
+    refs.krb.forEach((r, i) => { h += `<tr><td class="name-cell" data-label="Вид"><input data-ref="krb.${i}.name" data-text value="${esc(r.name)}"></td>${cell(`krb.${i}.prep`, r.prep, 'Подготовленный')}${cell(`krb.${i}.unprep`, r.unprep, 'Неподготовленный')}</tr>`; });
+    h += '</tbody></table></div>';
+    h += `<h3>Коэффициент масштаба K<sub>м</sub> (УТГ)</h3><div class="table-wrap"><table class="cards"><thead><tr><th>Группа</th><th>K<sub>м</sub></th></tr></thead><tbody>
+      <tr><td data-label="Группа">БТВТ</td>${cell('km.btvt', refs.km.btvt, 'K_м')}</tr><tr><td data-label="Группа">АТ</td>${cell('km.at', refs.km.at, 'K_м')}</tr></tbody></table></div>`;
+    $('refs').innerHTML = h;
+    $('refs').querySelectorAll('[data-ref]').forEach((el) => {
+      el.addEventListener('input', () => onRefInput(el));
+      el.addEventListener('change', () => { renderRefs(); renderGroup('btvt'); renderGroup('at'); recalc(); });
+    });
+  }
+
+  function onRefInput(el) {
+    const path = el.dataset.ref.split('.');
+    let v = el.value;
+    if (!('text' in el.dataset)) {
+      v = num(v);
+      el.classList.toggle('bad-input', v == null || Number.isNaN(v));
+      if (v == null || Number.isNaN(v)) return;
+    }
+    let o = refs;
+    for (let i = 0; i < path.length - 1; i++) o = o[path[i]];
+    const key = path[path.length - 1];
+    const old = o[key];
+    o[key] = v;
+    // норма табл. 1 изменена — применить к строкам расчёта этого вида
+    if (path[0] === 'norms' && C.KIND_KEYS.includes(key)) {
+      const g = path[1];
+      const idx = +path[2];
+      input.groups[g].rows.forEach((r) => { if (r.type === idx && Math.abs(r[key] - old) < 1e-9) r[key] = v; });
+    }
+    if (path[0] === 'norms' || path[0] === 'krb') { renderGroup('btvt'); renderGroup('at'); }
+    recalc();
+  }
+
+  $('btnFixTractor').onclick = () => {
+    const i = refs.norms.btvt.findIndex((n) => /тягач/i.test(n.name));
+    if (i < 0) return;
+    const old = refs.norms.btvt[i].sr;
+    refs.norms.btvt[i].sr = 0.44;
+    input.groups.btvt.rows.forEach((r) => { if (r.type === i && Math.abs(r.sr - old) < 1e-9) r.sr = 0.44; });
+    renderRefs(); renderGroup('btvt'); recalc();
+  };
+  $('btnRefsReset').onclick = () => {
+    if (!confirm('Восстановить справочные таблицы из методички? Ваши изменения норм будут потеряны.')) return;
+    refs = C.defaultRefs();
+    for (const g of C.GROUP_KEYS) {
+      input.groups[g].rows = input.groups[g].rows.map((r) => C.newRow(refs, g, Math.min(r.type, refs.norms[g].length - 1), r.count));
+      if (input.groups[g].krbRow >= refs.krb.length) input.groups[g].krbRow = 0;
+    }
+    renderAll();
+  };
+
+  // ---------- Варианты ----------
+  function scenarios() { const s = storage.get(KEY_SC); return Array.isArray(s) ? s : []; }
+  function renderCompare() {
+    const list = scenarios();
+    const rows = [{ name: 'Текущий расчёт', current: true, input, refs }, ...list];
+    const head = ['Вариант', 'N_ВВСТ, ед./сут.', 'БТВТ', 'АТ', 'K_c', 'БП за операцию, ед.', 'Исправно в конце, %', 'Мин. исправность, %', ''];
+    $('compareTable').innerHTML = `<thead><tr>${head.map((h) => `<th>${h}</th>`).join('')}</tr></thead><tbody>${rows.map((sc, i) => {
+      let s;
+      try { s = C.summarize(sc.input, sc.refs); } catch (e) { s = null; }
+      const cells = s ? [fs(s.total), fs(s.btvt), fs(s.at), s.kc == null ? '—' : fmt(s.kc, 2), fmt(s.bpOp, 1), fmt(s.finalPct, 1), s.minReadiness ? fmt(s.minReadiness.pct, 1) : '—'] : Array(7).fill('ошибка');
+      return `<tr${sc.current ? ' style="font-weight:600"' : ''}>
+        <td data-label="Вариант">${esc(sc.name)}${sc.savedAt ? `<div class="hint">${esc(new Date(sc.savedAt).toLocaleString('ru-RU'))}</div>` : ''}</td>
+        ${cells.map((c, j) => `<td data-label="${head[j + 1]}">${c}</td>`).join('')}
+        <td data-label="">${sc.current ? '' : `<button data-load="${i - 1}">Открыть</button> <button class="del" data-delsc="${i - 1}" title="Удалить вариант">✕</button>`}</td></tr>`;
+    }).join('')}</tbody>`;
+    $('compareTable').querySelectorAll('[data-load]').forEach((b) => {
+      b.onclick = () => { const sc = scenarios()[+b.dataset.load]; if (sc) { applyState(sc); } };
+    });
+    $('compareTable').querySelectorAll('[data-delsc]').forEach((b) => {
+      b.onclick = () => { const l = scenarios(); l.splice(+b.dataset.delsc, 1); storage.set(KEY_SC, l); renderCompare(); };
+    });
+  }
+  $('btnSave').onclick = () => {
+    const name = $('scName').value.trim() || `Вариант ${scenarios().length + 1}`;
+    const l = scenarios();
+    l.push({ name, savedAt: Date.now(), input: clone(input), refs: clone(refs) });
+    if (!storage.set(KEY_SC, l)) { $('storageHint').textContent = 'Не удалось сохранить: хранилище браузера недоступно. Используйте «Сохранить в файл».'; return; }
+    $('scName').value = '';
+    renderCompare();
+  };
+
+  function applyState(st) {
+    refs = clone(st.refs);
+    const d = C.defaultInput(refs);
+    input = Object.assign(d, clone(st.input));
+    input.repair = Object.assign(C.defaultInput(refs).repair, clone(st.input.repair || {}));
+    input.sim = Object.assign(C.defaultInput(refs).sim, clone(st.input.sim || {}));
+    renderAll();
+  }
+
+  // ---------- Файлы ----------
+  function download(name, content, type) {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([content], { type }));
+    a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 0);
+  }
+  $('btnCsv').onclick = () => download('raschet-poter.csv', C.toCSV(input, refs, last.day, last.repair, last.sim), 'text/csv;charset=utf-8');
+  $('btnJson').onclick = () => download('raschet-poter.json', JSON.stringify({ format: 'loss-calc', version: 2, input, refs }, null, 2), 'application/json');
+  $('btnImport').onclick = () => $('fileImport').click();
+  $('fileImport').onchange = async () => {
+    const f = $('fileImport').files[0];
+    if (!f) return;
+    try {
+      const data = JSON.parse(await f.text());
+      if (!isValidState(data)) throw new Error('format');
+      applyState(data);
+    } catch (e) {
+      alert('Не удалось загрузить файл: это не файл расчёта или он повреждён.');
+    }
+    $('fileImport').value = '';
+  };
+  $('btnPrint').onclick = () => window.print();
+  window.addEventListener('beforeprint', () => { document.querySelectorAll('#simTable').forEach((t) => t.closest('details').open = true); });
+  $('btnCopy').onclick = async () => {
+    const txt = C.solutionText(last.solution);
+    try { await navigator.clipboard.writeText(txt); $('btnCopy').textContent = 'Скопировано ✓'; }
+    catch (e) {
+      const ta = document.createElement('textarea'); ta.value = txt; document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); $('btnCopy').textContent = 'Скопировано ✓'; } catch (e2) { /* нет доступа к буферу */ }
+      ta.remove();
+    }
+    setTimeout(() => { $('btnCopy').textContent = 'Копировать текст'; }, 1500);
+  };
+
+  $('btnExample').onclick = () => { input = C.exampleInput(refs); renderAll(); };
+  $('btnReset').onclick = () => { input = C.defaultInput(refs); renderAll(); };
+
+  // ---------- Пересчёт ----------
+  function recalc() {
+    const warnings = C.validate(input, refs);
+    const range = refs.kzs[input.action][input.echelon];
+    $('kzsHint').textContent = `Диапазон по табл. 3: ${fmt(range[0])}–${fmt(range[1])}`;
+    if (warnings.some((w) => w.level === 'error')) {
+      renderWarnings(warnings);
+      $('ktHint').textContent = '';
+      persist();
+      return;
+    }
+    const day = C.calcDay(input, refs);
+    const repair = C.assessRepair(day, input.repair);
+    const sim = C.simulate(input, refs, day);
+    const solution = C.solution(input, refs, day, repair, sim);
+    last = { day, repair, sim, solution };
+    $('ktHint').textContent = `K(t) = ${fmt(day.kt.k)} — ${day.kt.note}`;
+    C.GROUP_KEYS.forEach((g) => updateGroupOutputs(g, day));
+    renderDayTiles(day);
+    renderRepair(repair);
+    renderSim(sim);
+    renderSolution(solution);
+    renderWarnings(warnings);
+    renderCompare();
+    persist();
+  }
+
+  function renderAll() {
+    syncForm();
+    renderGroup('btvt');
+    renderGroup('at');
+    renderRefs();
+    recalc();
+  }
+
+  let rt;
+  window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => last.sim && drawChart(last.sim), 150); });
+
+  loadState();
+  renderAll();
+})();
 </script>
 </body>
 </html>
